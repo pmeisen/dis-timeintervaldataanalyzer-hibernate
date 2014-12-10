@@ -1,10 +1,14 @@
 package net.meisen.dissertation.impl.cache.hibernate;
 
+import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import net.meisen.dissertation.config.xslt.DefaultValues;
 import net.meisen.dissertation.exceptions.GeneralException;
+import net.meisen.dissertation.model.cache.ICache;
 import net.meisen.dissertation.model.data.TidaModel;
 import net.meisen.general.genmisc.exceptions.ForwardedRuntimeException;
 import net.meisen.general.genmisc.exceptions.catalog.DefaultLocalizedExceptionCatalog;
@@ -29,10 +33,30 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
-public abstract class HibernateSessionManager {
+/**
+ * A base implementation for caches using {@code Hibernate}.
+ * 
+ * @author pmeisen
+ * 
+ * @param <T>
+ *            the type of the identifier used to manage the enitites
+ */
+public abstract class HibernateSessionManager<T extends Serializable>
+		implements ICache {
 	private final static Logger LOG = LoggerFactory
 			.getLogger(HibernateSessionManager.class);
 
+	/**
+	 * A wrapper for a session and transaction. The wrapper is used to bundle
+	 * the commits and closes for the {@code Session} and the
+	 * {@code Transaction}.
+	 * 
+	 * @author pmeisen
+	 * 
+	 * @see Session
+	 * @see Transaction
+	 * 
+	 */
 	protected final static class SessionTransactionWrapper {
 		private final Session session;
 		private final Transaction transaction;
@@ -40,6 +64,17 @@ public abstract class HibernateSessionManager {
 
 		private int statements;
 
+		/**
+		 * Constructor specifying the factory and the commitSize of {@code this}
+		 * .
+		 * 
+		 * @param factory
+		 *            the {@code SessionFactory} of {@code Hibernate}
+		 * @param commitSize
+		 *            the amount of statements fired whenever changes should be
+		 *            auto-commit; a negative commit-size indicates that only
+		 *            one statement should be handled
+		 */
 		public SessionTransactionWrapper(final SessionFactory factory,
 				final int commitSize) {
 			this.session = factory.openSession();
@@ -49,6 +84,12 @@ public abstract class HibernateSessionManager {
 			this.statements = 0;
 		}
 
+		/**
+		 * Inform the instance that a statement was handled. If a negative
+		 * commit-size is specified, the session and transaction is closed,
+		 * otherwise a commit is sent if the amount of statements reaches the
+		 * commit-size.
+		 */
 		public void statementHandled() {
 			statements++;
 
@@ -59,14 +100,28 @@ public abstract class HibernateSessionManager {
 			}
 		}
 
+		/**
+		 * Gets the transaction of {@code this}.
+		 * 
+		 * @return the transaction of {@code this}
+		 */
 		public Transaction getTransaction() {
 			return transaction;
 		}
 
+		/**
+		 * Gets the session of {@code this}.
+		 * 
+		 * @return the session of {@code this}
+		 */
 		public Session getSession() {
 			return session;
 		}
 
+		/**
+		 * Closes {@code this} and all resources, i.e. {@code Session} and
+		 * {@code Transaction}.
+		 */
 		public void close() {
 			this.transaction.commit();
 			this.session.close();
@@ -78,6 +133,9 @@ public abstract class HibernateSessionManager {
 		}
 	}
 
+	/**
+	 * The {@code ExceptionRegistry} for the manager.
+	 */
 	@Autowired
 	@Qualifier(DefaultValues.EXCEPTIONREGISTRY_ID)
 	protected IExceptionRegistry exceptionRegistry;
@@ -93,6 +151,9 @@ public abstract class HibernateSessionManager {
 
 	private SessionTransactionWrapper currentWrapper;
 
+	/**
+	 * Default constructor.
+	 */
 	public HibernateSessionManager() {
 		this.initialized = false;
 		this.entityName = null;
@@ -103,6 +164,7 @@ public abstract class HibernateSessionManager {
 		this.currentWrapper = null;
 	}
 
+	@Override
 	public void initialize(final TidaModel model)
 			throws HibernateSessionManagerException {
 
@@ -154,10 +216,22 @@ public abstract class HibernateSessionManager {
 		this.initialized = true;
 	}
 
+	/**
+	 * Specifies the {@code ExceptionRegistry} to be used. Might be auto-wired.
+	 * 
+	 * @param exceptionRegistry
+	 *            the registry to be used
+	 */
 	public void setExceptionRegistry(final IExceptionRegistry exceptionRegistry) {
 		this.exceptionRegistry = exceptionRegistry;
 	}
 
+	/**
+	 * Determines the dialect of the underlying database used.
+	 * 
+	 * @return the used {@code Dialect} or {@code null} if no dialect can be
+	 *         determined
+	 */
 	protected Dialect determineDialect() {
 
 		// define the mappings using the dialect and create a new factory
@@ -174,24 +248,52 @@ public abstract class HibernateSessionManager {
 		return dialect;
 	}
 
-	protected SessionFactory createUnmappedFactory() {
+	/**
+	 * Creates an unmapped factory. The factory is mainly used to fire a single
+	 * statement or to determine settings. It can not be used to manipulate or
+	 * work with the entities.
+	 * 
+	 * @return an unmapped factory
+	 * 
+	 * @throws HibernateSessionManagerException
+	 *             if the factory cannot be created
+	 */
+	protected SessionFactory createUnmappedFactory()
+			throws HibernateSessionManagerException {
 		final Map<String, String> override = new HashMap<String, String>();
 		override.put(HibernateConfig.PROP_MAXPOOLSIZE, "1");
 
 		final HibernateConfig config = getConfig();
 
-		// create a builder and apply the configuration
-		final StandardServiceRegistryBuilder builder = new StandardServiceRegistryBuilder();
-		config.applyToHibernateBuilder(override, builder);
+		try {
+			// create a builder and apply the configuration
+			final StandardServiceRegistryBuilder builder = new StandardServiceRegistryBuilder();
+			config.applyToHibernateBuilder(override, builder);
 
-		// create a factory using the config
-		final Configuration hibernateConfig = config
-				.createHibernateConfig(override);
+			// create a factory using the config
+			final Configuration hibernateConfig = config
+					.createHibernateConfig(override);
 
-		// define the mappings using the dialect and create a new factory
-		return hibernateConfig.buildSessionFactory(builder.build());
+			// define the mappings using the dialect and create a new factory
+			return hibernateConfig.buildSessionFactory(builder.build());
+		} catch (final Throwable t) {
+
+			// catch any exception
+			exceptionRegistry.throwException(
+					HibernateSessionManagerException.class, 1000, t, config,
+					t.getMessage());
+			return null;
+		}
 	}
 
+	/**
+	 * Creates a factory useful to work with the entities.
+	 * 
+	 * @return the created factory
+	 * 
+	 * @throws HibernateSessionManagerException
+	 *             if the factory cannot be created
+	 */
 	protected SessionFactory createFactory()
 			throws HibernateSessionManagerException {
 		final HibernateConfig config = getConfig();
@@ -223,12 +325,28 @@ public abstract class HibernateSessionManager {
 		}
 	}
 
+	/**
+	 * Quotes the {@code name} using the {@code Dialect} of {@code this}.
+	 * 
+	 * @param name
+	 *            the name to be quoted
+	 * 
+	 * @return the quoted name
+	 */
 	public String quote(final String name) {
 		final Dialect dialect = getDialect();
 		return dialect == null ? "[" + Strings.smartTrimSequence(name, "[")
 				+ "]" : dialect.quote("`" + name + "`");
 	}
 
+	/**
+	 * Register the {@code exception} in {@code defReg}.
+	 * 
+	 * @param defReg
+	 *            the registry to register the exception at
+	 * @param exception
+	 *            the exception-type to be added
+	 */
 	protected void registerException(final DefaultExceptionRegistry defReg,
 			final Class<? extends RuntimeException> exception) {
 		if (!defReg.isRegistered(exception)) {
@@ -237,6 +355,14 @@ public abstract class HibernateSessionManager {
 		}
 	}
 
+	/**
+	 * Gets the name of the entity.
+	 * 
+	 * @return the name of the entity
+	 * 
+	 * @throws HibernateSessionManagerException
+	 *             if the name is invalid
+	 */
 	public String getEntityName() throws HibernateSessionManagerException {
 		if (entityName == null) {
 			exceptionRegistry.throwException(
@@ -246,8 +372,8 @@ public abstract class HibernateSessionManager {
 		return entityName;
 	}
 
-	public synchronized boolean setPersistency(final boolean enable)
-			throws HibernateSessionManagerException {
+	@Override
+	public synchronized boolean setPersistency(final boolean enable) {
 
 		/*
 		 * Make sure that there is no other thread working with the cache
@@ -288,6 +414,7 @@ public abstract class HibernateSessionManager {
 		return oldPersistency;
 	}
 
+	@Override
 	public synchronized void release() {
 		if (!this.initialized) {
 			return;
@@ -314,7 +441,8 @@ public abstract class HibernateSessionManager {
 		}
 	}
 
-	protected void remove() {
+	@Override
+	public void remove() {
 		if (this.initialized) {
 			release();
 		}
@@ -343,6 +471,11 @@ public abstract class HibernateSessionManager {
 		fac.close();
 	}
 
+	/**
+	 * Gets the amount of the cached entities.
+	 * 
+	 * @return the amount of the cached entities
+	 */
 	public int size() {
 		final SessionTransactionWrapper wrapper = w();
 		final int res = Numbers.castToInt((Long) wrapper.session
@@ -353,10 +486,25 @@ public abstract class HibernateSessionManager {
 		return res;
 	}
 
+	/**
+	 * Gets the dialect of {@code this}.
+	 * 
+	 * @return the dialect of {@code this}
+	 * 
+	 * @see Dialect
+	 */
 	protected Dialect getDialect() {
 		return dialect;
 	}
 
+	/**
+	 * Gets the current {@code SessionTransactionWrapper} or creates a new one.
+	 * 
+	 * @return the current {@code SessionTransactionWrapper} or creates a new
+	 *         one
+	 * @throws HibernateSessionManagerException
+	 *             if the manager isn't initialized
+	 */
 	protected SessionTransactionWrapper w()
 			throws HibernateSessionManagerException {
 		if (!initialized) {
@@ -381,12 +529,114 @@ public abstract class HibernateSessionManager {
 		}
 	}
 
+	/**
+	 * Creates the name of the entity for the concrete implementation and the
+	 * model the specified model. The value should be retrieved using
+	 * {@link #getEntityName()}.
+	 * 
+	 * @param model
+	 *            the model to create the {@code entityName} for
+	 * 
+	 * @return the created name
+	 */
 	protected abstract String createEntityName(final TidaModel model);
 
+	/**
+	 * Gets the exceptions which should be registered for the concrete
+	 * implementation.
+	 * 
+	 * @return the exceptions which should be registered for the concrete
+	 *         implementation
+	 */
 	protected abstract Class<? extends RuntimeException>[] getExceptions();
 
+	/**
+	 * Gets the configuration for {@code this}.
+	 * 
+	 * @return the configuration for {@code this}
+	 */
 	protected abstract HibernateConfig getConfig();
 
+	/**
+	 * Define the mapping of the concrete implementation.
+	 * 
+	 * @param config
+	 *            the {@code Configuration} of {@code this}
+	 * @param dialect
+	 *            the dialect
+	 */
 	protected abstract void defineMappings(final Configuration config,
 			final Dialect dialect);
+
+	/**
+	 * Saves the specified map using the specified {@code id}. If the identifier
+	 * is {@code null} the map will be inserted for sure, otherwise it will be
+	 * checked and updated.
+	 * 
+	 * @param map
+	 *            the record to be saved
+	 * @param id
+	 *            the id of the record
+	 */
+	protected synchronized void saveMap(final Map<String, Object> map,
+			final T id) {
+		final String entityName = getEntityName();
+		final SessionTransactionWrapper wrapper = w();
+
+		// get the value
+		final boolean update;
+		if (id == null) {
+			update = false;
+		} else {
+			update = wrapper.getSession().get(entityName, id) != null;
+		}
+
+		// check if update has to be performed
+		if (update) {
+			wrapper.getSession().merge(entityName, map);
+		} else {
+			wrapper.getSession().save(entityName, map);
+		}
+
+		wrapper.statementHandled();
+	}
+
+	/**
+	 * Gets the map for the specified {@code id}.
+	 * 
+	 * @param id
+	 *            the identifier to be retrieved
+	 * 
+	 * @return the record as map or {@code null} if none exists
+	 */
+	@SuppressWarnings("unchecked")
+	protected final Map<String, Object> getMap(final T id) {
+		final String entityName = getEntityName();
+		final SessionTransactionWrapper wrapper = w();
+
+		final Object value = wrapper.getSession().get(entityName, id);
+		wrapper.statementHandled();
+
+		if (value instanceof Map) {
+			return (Map<String, Object>) value;
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Creates an iterator for the identifiers of the entities.
+	 * 
+	 * @return an iterator for the identifiers of the entities
+	 */
+	protected Iterator<T> createIterator() {
+		final SessionTransactionWrapper wrapper = w();
+
+		@SuppressWarnings("unchecked")
+		final List<T> list = wrapper.getSession()
+				.createQuery("SELECT id FROM " + getEntityName()).list();
+		wrapper.statementHandled();
+
+		return list.iterator();
+	}
 }

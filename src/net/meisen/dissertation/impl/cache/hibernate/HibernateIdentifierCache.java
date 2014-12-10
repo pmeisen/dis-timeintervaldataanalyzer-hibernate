@@ -30,13 +30,22 @@ import org.hibernate.mapping.SimpleValue;
 import org.hibernate.mapping.Table;
 import java.sql.Types;
 
+/**
+ * Cache based on {@code Hibernate} used for {@code Identifiers} instances.
+ * 
+ * @author pmeisen
+ * 
+ */
 public class HibernateIdentifierCache extends BaseIdentifierCache {
 
-	private HibernateSessionManagerWithId<Integer> sessionManager;
+	private HibernateSessionManager<Integer> sessionManager;
 	private HibernateIdentifierCacheConfig config;
 
 	private Map<String, Object> currentData;
 
+	/**
+	 * Default constructor.
+	 */
 	public HibernateIdentifierCache() {
 		this.sessionManager = null;
 		this.config = null;
@@ -46,7 +55,7 @@ public class HibernateIdentifierCache extends BaseIdentifierCache {
 	public void initialize(final TidaModel model) {
 
 		// create the manager
-		sessionManager = new HibernateSessionManagerWithId<Integer>() {
+		sessionManager = new HibernateSessionManager<Integer>() {
 
 			@Override
 			protected String createEntityName(final TidaModel model) {
@@ -81,9 +90,9 @@ public class HibernateIdentifierCache extends BaseIdentifierCache {
 				clazz.setLazy(true);
 				clazz.setTable(table);
 
-				HibernateIdentifierCache.this.createKeyMapping(this, mappings,
-						table, clazz, dialect);
-				HibernateIdentifierCache.this.createAdditionalMappings(this,
+				HibernateIdentifierCache.this.createKeyMapping(mappings, table,
+						clazz, dialect);
+				HibernateIdentifierCache.this.createAdditionalMappings(
 						mappings, table, clazz, dialect);
 
 				mappings.addClass(clazz);
@@ -112,14 +121,35 @@ public class HibernateIdentifierCache extends BaseIdentifierCache {
 		markAsInitialized();
 	}
 
+	/**
+	 * Sets the {@code ExceptionRegistry} to be used. Might be auto-wired if one
+	 * is defined.
+	 * 
+	 * @param exceptionRegistry
+	 *            the registry to be used
+	 */
 	public void setExceptionRegistry(final IExceptionRegistry exceptionRegistry) {
 		this.exceptionRegistry = exceptionRegistry;
 	}
 
+	/**
+	 * Sets the index-factory to be used. Might be auto-wired if one is defined.
+	 * 
+	 * @param indexFactory
+	 *            the index-factory to be used
+	 */
 	public void setIndexFactory(final BaseIndexFactory indexFactory) {
 		this.indexFactory = indexFactory;
 	}
 
+	/**
+	 * Gets the specified {@code Bitmap} as byte-array.
+	 * 
+	 * @param bitmap
+	 *            the {@code Bitmap} to be represented as byte-array
+	 * 
+	 * @return the byte-array representation
+	 */
 	protected byte[] getByteBitmap(final Bitmap bitmap) {
 
 		// get the bitmap
@@ -139,6 +169,14 @@ public class HibernateIdentifierCache extends BaseIdentifierCache {
 		return baos.toByteArray();
 	}
 
+	/**
+	 * Gets the bitmap defined by the byte-array.
+	 * 
+	 * @param byteBitmap
+	 *            the byte-array representation of the bitmap
+	 * 
+	 * @return the bitmap
+	 */
 	protected Bitmap getBitmap(final byte[] byteBitmap) {
 		final DataInputStream in = new DataInputStream(
 				new ByteArrayInputStream(byteBitmap));
@@ -187,14 +225,24 @@ public class HibernateIdentifierCache extends BaseIdentifierCache {
 		sessionManager.saveMap(currentData, 0);
 	}
 
-	protected void createAdditionalMappings(
-			final HibernateSessionManagerWithId<Integer> manager,
-			final Mappings mappings, final Table table, final RootClass clazz,
-			final Dialect dialect) {
+	/**
+	 * Method called to add mappings to the {@code Hibernate} definition.
+	 * 
+	 * @param mappings
+	 *            the {@code Mappings}
+	 * @param table
+	 *            the table defined
+	 * @param clazz
+	 *            the defined class
+	 * @param dialect
+	 *            the dialect of the database
+	 */
+	protected void createAdditionalMappings(final Mappings mappings,
+			final Table table, final RootClass clazz, final Dialect dialect) {
 
 		// create the column for the bitmap
 		final Column cBitmap = new Column();
-		cBitmap.setName(manager.quote("bitmap"));
+		cBitmap.setName(sessionManager.quote("bitmap"));
 		cBitmap.setNullable(false);
 		cBitmap.setLength(Integer.MAX_VALUE);
 		cBitmap.setSqlTypeCode(Types.VARBINARY);
@@ -214,7 +262,7 @@ public class HibernateIdentifierCache extends BaseIdentifierCache {
 
 		// create the column for the lastUsed
 		final Column cLastUsed = new Column();
-		cLastUsed.setName(manager.quote("lastused"));
+		cLastUsed.setName(sessionManager.quote("lastused"));
 		cLastUsed.setNullable(false);
 		cLastUsed.setSqlTypeCode(DataType.INT.getSqlType());
 
@@ -231,12 +279,24 @@ public class HibernateIdentifierCache extends BaseIdentifierCache {
 		table.addColumn(cLastUsed);
 	}
 
+	/**
+	 * Method to create the mappings needed for an bitmap-identifier.
+	 * 
+	 * @param mappings
+	 *            the {@code Mappings}
+	 * @param table
+	 *            the table defined
+	 * @param clazz
+	 *            the defined class
+	 * @param dialect
+	 *            the dialect of the database
+	 */
 	protected void createKeyMapping(
-			final HibernateSessionManagerWithId<Integer> manager,
-			final Mappings mappings, final Table table, final RootClass clazz,
+
+	final Mappings mappings, final Table table, final RootClass clazz,
 			final Dialect dialect) {
 		final Column column = new Column();
-		column.setName(manager.quote("key"));
+		column.setName(sessionManager.quote("key"));
 		column.setNullable(false);
 		column.setSqlTypeCode(DataType.INT.getSqlType());
 		column.setLength(BitmapId.getMaxBytesLength());
@@ -254,7 +314,7 @@ public class HibernateIdentifierCache extends BaseIdentifierCache {
 		p.setUpdateable(false);
 
 		final PrimaryKey primaryKey = new PrimaryKey();
-		primaryKey.setName("PK_" + manager.getEntityName());
+		primaryKey.setName("PK_" + sessionManager.getEntityName());
 		primaryKey.setTable(table);
 		primaryKey.addColumn(column);
 

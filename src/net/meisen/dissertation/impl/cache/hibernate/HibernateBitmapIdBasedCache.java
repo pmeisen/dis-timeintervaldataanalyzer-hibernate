@@ -30,8 +30,8 @@ import org.hibernate.mapping.Table;
  *            the entity to be associated to the identifier
  */
 public abstract class HibernateBitmapIdBasedCache<T extends IBitmapIdCacheable>
-		extends HibernateSessionManagerWithId<String> implements
-		IBitmapIdCache<T>, IReferenceMechanismCache<BitmapId<?>, T> {
+		extends HibernateSessionManager<String> implements IBitmapIdCache<T>,
+		IReferenceMechanismCache<BitmapId<?>, T> {
 
 	/**
 	 * Encode the identifier of the bitmap to be used as string, without losing
@@ -87,11 +87,6 @@ public abstract class HibernateBitmapIdBasedCache<T extends IBitmapIdCacheable>
 	@Override
 	public boolean contains(final BitmapId<?> bitmapId) {
 		return get(bitmapId) != null;
-	}
-
-	@Override
-	public void remove() {
-		super.remove();
 	}
 
 	@Override

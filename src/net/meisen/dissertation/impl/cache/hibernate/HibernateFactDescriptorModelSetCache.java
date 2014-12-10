@@ -23,11 +23,21 @@ import org.hibernate.mapping.RootClass;
 import org.hibernate.mapping.SimpleValue;
 import org.hibernate.mapping.Table;
 
+/**
+ * Cache based on {@code Hibernate} used for {@code FactDescriptorModelSet}
+ * instances.
+ * 
+ * @author pmeisen
+ * 
+ */
 public class HibernateFactDescriptorModelSetCache extends
 		HibernateBitmapIdBasedCache<FactDescriptorModelSet> {
 
 	private HibernateFactDescriptorModelSetCacheConfig config;
 
+	/**
+	 * Default constructor.
+	 */
 	public HibernateFactDescriptorModelSetCache() {
 		this.config = null;
 	}

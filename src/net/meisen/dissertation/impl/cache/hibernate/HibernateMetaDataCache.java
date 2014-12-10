@@ -33,8 +33,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
-public class HibernateMetaDataCache extends
-		HibernateSessionManagerWithId<String> implements IMetaDataCache {
+/**
+ * A {@code Hibernate} cache used for meta-data.
+ * 
+ * @author pmeisen
+ * 
+ */
+public class HibernateMetaDataCache extends HibernateSessionManager<String>
+		implements IMetaDataCache {
 	private final static Logger LOG = LoggerFactory
 			.getLogger(HibernateMetaDataCache.class);
 
@@ -44,9 +50,11 @@ public class HibernateMetaDataCache extends
 
 	private HibernateMetaDataCacheConfig config;
 
-	@Override
-	public void remove() {
-		super.remove();
+	/**
+	 * Default constructor.
+	 */
+	public HibernateMetaDataCache() {
+		this.config = null;
 	}
 
 	@Override
@@ -178,6 +186,18 @@ public class HibernateMetaDataCache extends
 		mappings.addClass(clazz);
 	}
 
+	/**
+	 * Method to create the mappings needed for an bitmap-identifier.
+	 * 
+	 * @param mappings
+	 *            the {@code Mappings}
+	 * @param table
+	 *            the table defined
+	 * @param clazz
+	 *            the defined class
+	 * @param dialect
+	 *            the dialect of the database
+	 */
 	protected void createKeyMapping(final Mappings mappings, final Table table,
 			final RootClass clazz, final Dialect dialect) {
 
@@ -213,6 +233,18 @@ public class HibernateMetaDataCache extends
 		clazz.setIdentifierProperty(p);
 	}
 
+	/**
+	 * Method called to add mappings to the {@code Hibernate} definition.
+	 * 
+	 * @param mappings
+	 *            the {@code Mappings}
+	 * @param table
+	 *            the table defined
+	 * @param clazz
+	 *            the defined class
+	 * @param dialect
+	 *            the dialect of the database
+	 */
 	protected void createAdditionalMappings(final Mappings mappings,
 			final Table table, final RootClass clazz, final Dialect dialect) {
 

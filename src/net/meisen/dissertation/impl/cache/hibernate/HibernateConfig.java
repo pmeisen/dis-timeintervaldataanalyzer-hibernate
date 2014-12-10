@@ -12,7 +12,17 @@ import org.hibernate.cfg.Configuration;
 
 import com.zaxxer.hikari.hibernate.HikariConnectionProvider;
 
+/**
+ * The basic configuration for an {@code Hibernate} configuration.
+ * 
+ * @author pmeisen
+ * 
+ */
 public class HibernateConfig {
+
+	/**
+	 * Property used to define the maximal pool-size.
+	 */
 	public final static String PROP_MAXPOOLSIZE = "hibernate.hikari.maximumPoolSize";
 
 	private String driver = null;
@@ -21,6 +31,11 @@ public class HibernateConfig {
 	private String password = null;
 	private int commitSize = 100000;
 
+	/**
+	 * Helper method to create a map with the specified settings.
+	 * 
+	 * @return a map with configured settings
+	 */
 	protected Map<String, String> createSettings() {
 		final Map<String, String> settings = new HashMap<String, String>();
 
@@ -47,10 +62,23 @@ public class HibernateConfig {
 		return settings;
 	}
 
+	/**
+	 * Creates a {@code Hibernate} valid configuration.
+	 * 
+	 * @return the {@code Hibernate} configuration
+	 */
 	public Configuration createHibernateConfig() {
 		return createHibernateConfig(null);
 	}
 
+	/**
+	 * Creates a {@code Hibernate} valid configuration.
+	 * 
+	 * @param override
+	 *            properties set to override the specified configuration
+	 * 
+	 * @return the {@code Hibernate} configuration
+	 */
 	public Configuration createHibernateConfig(
 			final Map<String, String> override) {
 		final Map<String, String> settings = createSettings();
@@ -67,11 +95,25 @@ public class HibernateConfig {
 		return config;
 	}
 
+	/**
+	 * Applies the configuration to the {@code builder}.
+	 * 
+	 * @param builder
+	 *            the builder to aplly the configuration to
+	 */
 	public void applyToHibernateBuilder(
 			final StandardServiceRegistryBuilder builder) {
 		applyToHibernateBuilder(null, builder);
 	}
 
+	/**
+	 * Applies the configuration to the {@code builder}.
+	 * 
+	 * @param override
+	 *            properties set to override the specified configuration
+	 * @param builder
+	 *            the builder to aplly the configuration to
+	 */
 	public void applyToHibernateBuilder(final Map<String, String> override,
 			final StandardServiceRegistryBuilder builder) {
 		final Map<String, String> settings = createSettings();
@@ -84,42 +126,97 @@ public class HibernateConfig {
 		}
 	}
 
+	/**
+	 * Gets the specified driver.
+	 * 
+	 * @return the specified driver
+	 */
 	public String getDriver() {
 		return driver;
 	}
 
+	/**
+	 * Sets the driver.
+	 * 
+	 * @param driver
+	 *            the driver
+	 */
 	public void setDriver(final String driver) {
 		this.driver = driver;
 	}
 
+	/**
+	 * Gets the specified url.
+	 * 
+	 * @return the specified url
+	 */
 	public String getUrl() {
 		return url;
 	}
 
+	/**
+	 * Sets the url.
+	 * 
+	 * @param url
+	 *            the url
+	 */
 	public void setUrl(final String url) {
 		this.url = url;
 	}
 
+	/**
+	 * Gets the user-name specified.
+	 * 
+	 * @return the user-name specified
+	 */
 	public String getUsername() {
 		return username;
 	}
 
+	/**
+	 * Sets the user-name to be used.
+	 * 
+	 * @param username
+	 *            the user-name to be used
+	 */
 	public void setUsername(final String username) {
 		this.username = username;
 	}
 
+	/**
+	 * Gets the password specified.
+	 * 
+	 * @return the specified password
+	 */
 	public String getPassword() {
 		return password;
 	}
 
+	/**
+	 * Sets the password.
+	 * 
+	 * @param password
+	 *            the password
+	 */
 	public void setPassword(final String password) {
 		this.password = password;
 	}
 
+	/**
+	 * Gets the specified commit-size.
+	 * 
+	 * @return the specified commit-size
+	 */
 	public int getCommitSize() {
 		return commitSize;
 	}
 
+	/**
+	 * Sets the commit-size.
+	 * 
+	 * @param commitSize
+	 *            the commit-size
+	 */
 	public void setCommitSize(final int commitSize) {
 		this.commitSize = commitSize;
 	}

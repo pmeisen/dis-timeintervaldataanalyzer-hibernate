@@ -33,8 +33,8 @@ import org.hibernate.mapping.Table;
  * @see IDataRecordCache
  * 
  */
-public class HibernateDataRecordCache extends
-		HibernateSessionManagerWithId<Integer> implements IDataRecordCache {
+public class HibernateDataRecordCache extends HibernateSessionManager<Integer>
+		implements IDataRecordCache {
 
 	private BaseMapper<?> mapper;
 	private IDataRecordMeta meta;
@@ -183,11 +183,6 @@ public class HibernateDataRecordCache extends
 	@Override
 	public void release() {
 		super.release();
-	}
-
-	@Override
-	public void remove() {
-		super.remove();
 	}
 
 	@Override
