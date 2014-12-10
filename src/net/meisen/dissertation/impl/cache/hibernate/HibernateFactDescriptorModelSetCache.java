@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,7 +22,6 @@ import org.hibernate.mapping.Property;
 import org.hibernate.mapping.RootClass;
 import org.hibernate.mapping.SimpleValue;
 import org.hibernate.mapping.Table;
-import org.hsqldb.types.Types;
 
 public class HibernateFactDescriptorModelSetCache extends
 		HibernateBitmapIdBasedCache<FactDescriptorModelSet> {

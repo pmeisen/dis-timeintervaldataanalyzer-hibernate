@@ -20,14 +20,42 @@ import org.hibernate.mapping.RootClass;
 import org.hibernate.mapping.SimpleValue;
 import org.hibernate.mapping.Table;
 
+/**
+ * A base implementation of an {@code Hibernate} based bitmap using a
+ * bitmap-identifier (see {@link BitmapId}) as identifier.
+ * 
+ * @author pmeisen
+ * 
+ * @param <T>
+ *            the entity to be associated to the identifier
+ */
 public abstract class HibernateBitmapIdBasedCache<T extends IBitmapIdCacheable>
 		extends HibernateSessionManagerWithId<String> implements
 		IBitmapIdCache<T>, IReferenceMechanismCache<BitmapId<?>, T> {
-	
+
+	/**
+	 * Encode the identifier of the bitmap to be used as string, without losing
+	 * information.
+	 * 
+	 * @param bitmapId
+	 *            the bitmap to be encoded
+	 * 
+	 * @return the encoded bitmap
+	 * 
+	 * @see DatatypeConverter#printBase64Binary(byte[])
+	 */
 	protected String encodeBitmap(final BitmapId<?> bitmapId) {
 		return DatatypeConverter.printBase64Binary(bitmapId.bytes());
 	}
 
+	/**
+	 * Decodes the encoded {@code bitmapId}.
+	 * 
+	 * @param bitmapId
+	 *            the bitmap-identifier to be decoded
+	 * 
+	 * @return the original bitmap-identifier
+	 */
 	@SuppressWarnings("rawtypes")
 	protected BitmapId<?> decodeBitmap(final String bitmapId) {
 		return new BitmapId(DatatypeConverter.parseBase64Binary(bitmapId));
@@ -89,9 +117,33 @@ public abstract class HibernateBitmapIdBasedCache<T extends IBitmapIdCacheable>
 		mappings.addClass(clazz);
 	}
 
+	/**
+	 * Method called to add mappings to the {@code Hibernate} definition.
+	 * 
+	 * @param mappings
+	 *            the {@code Mappings}
+	 * @param table
+	 *            the table defined
+	 * @param clazz
+	 *            the defined class
+	 * @param dialect
+	 *            the dialect of the database
+	 */
 	protected abstract void createAdditionalMappings(final Mappings mappings,
 			final Table table, final RootClass clazz, final Dialect dialect);
 
+	/**
+	 * Method to create the mappings needed for an bitmap-identifier.
+	 * 
+	 * @param mappings
+	 *            the {@code Mappings}
+	 * @param table
+	 *            the table defined
+	 * @param clazz
+	 *            the defined class
+	 * @param dialect
+	 *            the dialect of the database
+	 */
 	protected void createKeyMapping(final Mappings mappings, final Table table,
 			final RootClass clazz, final Dialect dialect) {
 		final Column column = new Column();
