@@ -1,0 +1,5 @@
+http\://dev.meisen.net/xsd/dissertation/tidaHibernateMetaDataCache.xsd=net/meisen/dissertation/impl/cache/hibernate/HibernateMetaDataCache.xsd
+http\://dev.meisen.net/xsd/dissertation/tidaHibernateIdentifierCache.xsd=net/meisen/dissertation/impl/cache/hibernate/HibernateIdentifierCache.xsd
+http\://dev.meisen.net/xsd/dissertation/tidaHibernateFactDescriptorModelSetCache.xsd=net/meisen/dissertation/impl/cache/hibernate/HibernateFactDescriptorModelSetCache.xsd
+http\://dev.meisen.net/xsd/dissertation/tidaHibernateBitmapCache.xsd=net/meisen/dissertation/impl/cache/hibernate/HibernateBitmapCache.xsd
+http\://dev.meisen.net/xsd/dissertation/tidaHibernateDataRecordCache.xsd=net/meisen/dissertation/impl/cache/hibernate/HibernateDataRecordCache.xsd

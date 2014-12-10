@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<model xmlns="http://dev.meisen.net/xsd/dissertation/model"
+       xmlns:advDes="http://dev.meisen.net/xsd/dissertation/model/advancedDescriptors"
+       xmlns:rh="http://dev.meisen.net/xsd/dissertation/caches/records/hibernate"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       
+       xsi:schemaLocation="http://dev.meisen.net/xsd/dissertation/model                     http://dev.meisen.net/xsd/dissertation/tidaModel.xsd
+                           http://dev.meisen.net/xsd/dissertation/caches/records/hibernate  http://dev.meisen.net/xsd/dissertation/tidaHibernateDataRecordCache.xsd
+                           http://dev.meisen.net/xsd/dissertation/model/advancedDescriptors http://dev.meisen.net/xsd/dissertation/tidaAdvancedDescriptors.xsd"
+       
+       offlinemode="false" id="typeModelAdvanced">
+
+  <config>
+    <caches>
+      <!-- Define the cache to be used for metadata.
+  
+           The following cache implementations are available:
+            + net.meisen.dissertation.impl.cache.MemoryIdentifierCache
+            + net.meisen.dissertation.impl.cache.FileIdentifierCache
+        -->
+      <identifier implementation="net.meisen.dissertation.impl.cache.MemoryIdentifierCache" />
+    
+      <!-- Define the cache to be used for meta-information (i.e. the descriptors).
+
+           The following cache implementations are available:
+            + net.meisen.dissertation.impl.cache.MemoryMetaDataCache
+            + net.meisen.dissertation.impl.cache.FileMetaDataCache
+        -->
+      <metadata implementation="net.meisen.dissertation.impl.cache.MemoryMetaDataCache" />
+      
+      <!-- Define the cache to be used for bitmaps.
+
+           The following cache implementations are available:
+            + net.meisen.dissertation.impl.cache.MemoryBitmapCache
+            + net.meisen.dissertation.impl.cache.MapDbBitmapCache
+            + net.meisen.dissertation.impl.cache.FileBitmapCache
+        -->
+      <bitmap implementation="net.meisen.dissertation.impl.cache.MemoryBitmapCache" />
+      
+      <!-- Define the cache to be used for fact-sets.
+
+           The following cache implementations are available:
+            + net.meisen.dissertation.impl.cache.MemoryFactDescriptorModelSetCache
+            + net.meisen.dissertation.impl.cache.FileFactDescriptorModelSetCache
+            + net.meisen.dissertation.impl.cache.MapDbFactDescriptorModelSetCache
+        -->
+      <factsets implementation="net.meisen.dissertation.impl.cache.MemoryFactDescriptorModelSetCache" />
+      
+      <!-- Define the cache to be used for records.
+
+           The following cache implementations are available:
+            + net.meisen.dissertation.impl.cache.IdsOnlyDataRecordCache
+            + net.meisen.dissertation.impl.cache.MemoryDataRecordCache
+            + net.meisen.dissertation.impl.cache.MapDbDataRecordCache
+        -->
+      <records implementation="net.meisen.dissertation.impl.cache.hibernate.HibernateDataRecordCache">
+        <!-- <rh:config driver="org.hsqldb.jdbcDriver" url="jdbc:hsqldb:hsql://localhost:6666/testDb" username="SA" password="" /> -->
+        <rh:config driver="oracle.jdbc.OracleDriver" url="jdbc:oracle:thin:@localhost:1521:db12c" username="tidatest" password="Webmaster" />
+      </records>
+    </caches>
+  </config>
+  
+  <time>
+    <timeline start="01.01.2015" end="01.01.2020" granularity="MINUTE" />
+  </time>
+  
+  <meta>
+    <descriptors>    
+      <string id="STRING" />
+      <integer id="INT" />
+      <long id="LONG" />
+      <advDes:list id="LIST" idfactory="net.meisen.dissertation.impl.idfactories.LongIdsFactory" />
+    </descriptors>
+
+    <entries />
+  </meta>
+  
+  <data metahandling="create" intervalhandling="boundariesWhenNull" />
+</model>

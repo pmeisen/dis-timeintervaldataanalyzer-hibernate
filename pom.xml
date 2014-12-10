@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  
+  <groupId>net.meisen.dissertation</groupId>
+  <artifactId>net-meisen-dissertation-dis-timeintervaldataanalyzer-hibernate</artifactId>
+  <version>TRUNK</version>
+  <name>dis-timeintervaldataanalyzer-hibernate</name>
+  <description>Time Interval Data Analyzer (Hibernate Cache Extension)</description>
+  <packaging>jar</packaging>
+  
+  <dependencies>
+  
+    <!-- Tida -->
+    <dependency>
+      <groupId>net.meisen.dissertation</groupId>
+      <artifactId>net-meisen-dissertation-dis-timeintervaldataanalyzer</artifactId>
+      <version>TRUNK-SNAPSHOT</version>
+    </dependency>
+    
+    <!-- Hibernate -->
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>4.3.7.Final</version>
+    </dependency>
+    
+    <!-- ConnectionManager -->
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP-java6</artifactId>
+      <version>2.2.5</version>
+    </dependency>
+    
+    <!-- Tests -->
+    <dependency>
+      <groupId>net.meisen.dissertation</groupId>
+      <artifactId>net-meisen-dissertation-dis-timeintervaldataanalyzer</artifactId>
+      <version>TRUNK-SNAPSHOT</version>
+      <classifier>test</classifier>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.3.2</version>
+      <scope>test</scope>
+    </dependency>
+    
+    <dependency>
+      <groupId>net.meisen.general</groupId>
+      <artifactId>net-meisen-general-gen-sbconfigurator</artifactId>
+      <version>TRUNK-SNAPSHOT</version>
+      <classifier>test</classifier>
+      <scope>test</scope>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.hsqldb</groupId>
+      <artifactId>hsqldb</artifactId>
+      <version>2.3.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>
