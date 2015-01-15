@@ -50,6 +50,7 @@ public class HibernateDataRecordCache extends HibernateSessionManager<Integer>
 
 	@Override
 	public void initialize(final TidaModel model) {
+		
 		// get the needed values
 		this.mapper = model.getIntervalModel().getTimelineMapper();
 		this.meta = model.getDataRecordFactory().getMeta();

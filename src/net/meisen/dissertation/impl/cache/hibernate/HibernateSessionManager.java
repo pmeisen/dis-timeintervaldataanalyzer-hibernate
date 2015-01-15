@@ -443,7 +443,9 @@ public abstract class HibernateSessionManager<T extends Serializable>
 
 	@Override
 	public void remove() {
-		if (this.initialized) {
+		final boolean init = this.initialized;
+
+		if (init) {
 			release();
 		}
 		// if there is no entity there is nothing to be deleted
@@ -462,8 +464,14 @@ public abstract class HibernateSessionManager<T extends Serializable>
 			query.executeUpdate();
 			session.close();
 		} catch (final JDBCException e) {
-			if (LOG.isErrorEnabled()) {
-				LOG.error("Unable to cleanUp.", e);
+			if (init) {
+				if (LOG.isErrorEnabled()) {
+					LOG.error("Unable to cleanUp.", e);
+				}
+			} else if (LOG.isTraceEnabled()) {
+				if (LOG.isTraceEnabled()) {
+					LOG.trace("Unable to cleanUp.", e);
+				}
 			}
 		}
 

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<!-- OfflineMode (i.e. what should happen if a dataretriever is not available)
+     is optional and can be one of the following values (case-insensitive):
+      + true, y, yes
+      + false, n, no
+      + auto
+  -->
+<model xmlns="http://dev.meisen.net/xsd/dissertation/model"
+       xmlns:mh="http://dev.meisen.net/xsd/dissertation/caches/metadata/hibernate"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       
+       xsi:schemaLocation="http://dev.meisen.net/xsd/dissertation/model                       http://dev.meisen.net/xsd/dissertation/tidaModel.xsd
+                           http://dev.meisen.net/xsd/dissertation/caches/metadata/hibernate   http://dev.meisen.net/xsd/dissertation/tidaHibernateMetaDataCache.xsd"
+       
+       offlinemode="false" id="metaDataModel">
+
+  <config>
+    <caches>
+      <metadata implementation="net.meisen.dissertation.impl.cache.hibernate.HibernateMetaDataCache">
+        <mh:config driver="org.hsqldb.jdbcDriver" url="jdbc:hsqldb:hsql://localhost:6666/testMetaDataDb" username="SA" password="" />
+      </metadata>
+    </caches>
+  </config>
+  
+  <time>
+    <timeline start="01.01.2015" end="01.01.2020" granularity="MINUTE" />
+  </time>
+  
+  <meta>
+    <descriptors>    
+      <string id="STRING" />
+      <integer id="INT" />
+      <long id="LONG" />
+    </descriptors>
+
+    <entries />
+  </meta>
+  
+  <data metahandling="create" intervalhandling="boundariesWhenNull" />
+</model>

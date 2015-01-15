@@ -2,17 +2,22 @@ package net.meisen.dissertation.impl.cache.hibernate;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.UUID;
 
 import net.meisen.dissertation.help.Db;
 import net.meisen.dissertation.help.LoaderBasedTest;
-import net.meisen.dissertation.impl.cache.UtilMetaDataCache;
+import net.meisen.dissertation.impl.datasets.SingleStaticDataSet;
+import net.meisen.dissertation.model.data.DataStructure;
 import net.meisen.dissertation.model.data.TidaModel;
-import net.meisen.dissertation.model.data.metadata.MetaDataCollection;
-import net.meisen.general.genmisc.exceptions.registry.DefaultExceptionRegistry;
+import net.meisen.dissertation.model.data.metadata.IMetaDataCollection;
+import net.meisen.dissertation.model.datastructure.IntervalStructureEntry;
+import net.meisen.dissertation.model.datastructure.MetaStructureEntry;
+import net.meisen.general.genmisc.types.Dates;
 import net.meisen.general.genmisc.types.Files;
 
 import org.junit.After;
@@ -25,8 +30,6 @@ import org.junit.Test;
  * 
  */
 public class TestHibernateMetaDataCache extends LoaderBasedTest {
-
-	private HibernateMetaDataCache cache;
 	private File tmpDir;
 	private Db db;
 
@@ -45,26 +48,11 @@ public class TestHibernateMetaDataCache extends LoaderBasedTest {
 				.randomUUID().toString());
 		db = new Db();
 		if (database == null) {
-			db.openNewDb("testDb", tmpDir, false);
+			db.openNewDb("testMetaDataDb", tmpDir, false);
 		} else {
-			db.addDb("testDb", database);
+			db.addDb("testMetaDataDb", database);
 		}
 		db.setUpDb();
-
-		// create the HibernateDataRecordCache
-		final DefaultExceptionRegistry excReg = new DefaultExceptionRegistry();
-
-		// create a configuration
-		final HibernateMetaDataCacheConfig config = new HibernateMetaDataCacheConfig();
-		config.setDriver("org.hsqldb.jdbcDriver");
-		config.setUrl("jdbc:hsqldb:hsql://localhost:6666/testDb");
-		config.setUsername("SA");
-		config.setPassword("");
-
-		// create the instance to be tested
-		cache = new HibernateMetaDataCache();
-		cache.setExceptionRegistry(excReg);
-		cache.setConfig(config);
 	}
 
 	/**
@@ -96,24 +84,122 @@ public class TestHibernateMetaDataCache extends LoaderBasedTest {
 	 */
 	@Test
 	public void testCaching() throws IOException {
-		setUp(null);
+		TidaModel model;
+		IMetaDataCollection mdc;
 
-		final TidaModel model = m("/net/meisen/dissertation/impl/cache/hibernate/defaultModel.xml");
-		createMetaData(model);
+		setUp(null);
+		model = m("/net/meisen/dissertation/impl/cache/hibernate/metaDataModel.xml");
 
 		// check the empty cache
-		cache.initialize(model);
-		assertEquals(0, cache.size());
+		assertEquals(0, model.getMetaDataCache().createMetaDataCollection()
+				.size());
 
-		// add some values to the cache
-		cache.cacheMetaDataModel(model.getMetaDataModel());
-		assertEquals(model.getMetaDataModel().getDescriptors().size(),
-				cache.size());
+		mdc = model.getMetaDataCache().createMetaDataCollection();
+		assertEquals(0, mdc.get("STRING").size());
+		assertEquals(0, mdc.get("INT").size());
+		assertEquals(0, mdc.get("LONG").size());
 
-		// get the values from the cache
-		final MetaDataCollection coll = cache.createMetaDataCollection();
-		assertEquals(UtilMetaDataCache.createCollectionForModel(model
-				.getMetaDataModel()), coll);
+		// let's add an some values
+		model.loadRecord(
+				createStructure(),
+				createDataset("01.01.2015", "02.01.2015", "value1", 50000,
+						100000));
+		model.loadRecord(
+				createStructure(),
+				createDataset("02.01.2015", "03.01.2015", "value2", 60000,
+						200000));
+		model.loadRecord(
+				createStructure(),
+				createDataset("03.01.2015", "04.01.2015", "value3", 70000,
+						300000));
+		mdc = model.getMetaDataCache().createMetaDataCollection();
+
+		assertEquals(1, mdc.get("STRING").size());
+		assertEquals(1, mdc.get("INT").size());
+		assertEquals(1, mdc.get("LONG").size());
+		assertEquals(3, mdc.sizeOfValues("STRING"));
+		assertEquals(3, mdc.sizeOfValues("INT"));
+		assertEquals(3, mdc.sizeOfValues("LONG"));
+
+		createMetaData(model);
+		mdc = model.getMetaDataCache().createMetaDataCollection();
+		assertEquals(7, mdc.sizeOfValues("STRING"));
+		assertEquals(1003, mdc.sizeOfValues("INT"));
+		assertEquals(1003, mdc.sizeOfValues("LONG"));
+	}
+
+	/**
+	 * Tests the caching of the {@code FileMetaDataCache}.
+	 * 
+	 * @throws IOException
+	 */
+	@Test
+	public void testReloading() throws IOException {
+		TidaModel model;
+		IMetaDataCollection mdc;
+
+		setUp(null);
+
+		model = m("/net/meisen/dissertation/impl/cache/hibernate/metaDataModel.xml");
+		mdc = model.getMetaDataCache().createMetaDataCollection();
+		assertEquals(0, mdc.size());
+
+		createMetaData(model);
+		mdc = model.getMetaDataCache().createMetaDataCollection();
+		assertEquals(3, mdc.size());
+
+		// unload the model
+		this.loader.unloadAll();
+
+		// now load the model again, the data (LX) should be available
+		model = m("/net/meisen/dissertation/impl/cache/hibernate/metaDataModel.xml");
+
+		mdc = model.getMetaDataCache().createMetaDataCollection();
+		assertEquals(3, mdc.size());
+		assertEquals(4, mdc.sizeOfValues("STRING"));
+		assertEquals(1000, mdc.sizeOfValues("INT"));
+		assertEquals(1000, mdc.sizeOfValues("LONG"));
+	}
+
+	/**
+	 * Creates the {@code DataStructure} needed to add data to the
+	 * {@code fileMetaDataCache}-model.
+	 * 
+	 * @return the created {@code DataStructure}
+	 */
+	protected DataStructure createStructure() {
+		return new DataStructure(new IntervalStructureEntry("START", 1),
+				new IntervalStructureEntry("END", 2), new MetaStructureEntry(
+						"STRING", 3), new MetaStructureEntry("INT", 4),
+				new MetaStructureEntry("LONG", 5));
+	}
+
+	/**
+	 * Helper method to create a dataset for testing.
+	 * 
+	 * @param start
+	 *            the start value
+	 * @param end
+	 *            the end value
+	 * @param string
+	 *            the STRING-descriptor value
+	 * @param intVal
+	 *            the INT-descriptor value
+	 * @param longVal
+	 *            the LONG-descriptor value
+	 * 
+	 * @return the created data-set
+	 */
+	protected SingleStaticDataSet createDataset(final String start,
+			final String end, final String string, final int intVal,
+			final long longVal) {
+		try {
+			return new SingleStaticDataSet(Dates.parseDate(end, "dd.MM.yyyy"),
+					Dates.parseDate(end, "dd.MM.yyyy"), string, intVal, longVal);
+		} catch (ParseException e) {
+			fail(e.getMessage());
+			return null;
+		}
 	}
 
 	/**
@@ -121,11 +207,7 @@ public class TestHibernateMetaDataCache extends LoaderBasedTest {
 	 */
 	@After
 	public void cleanUp() {
-
-		// remove the cache
-		if (cache != null) {
-			cache.remove();
-		}
+		super.unload();
 
 		// shutdown the database
 		if (db != null) {

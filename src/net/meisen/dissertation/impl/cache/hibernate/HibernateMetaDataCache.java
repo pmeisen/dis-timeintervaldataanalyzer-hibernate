@@ -1,19 +1,19 @@
 package net.meisen.dissertation.impl.cache.hibernate;
 
+import java.sql.Types;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 import javax.xml.bind.DatatypeConverter;
 
-import net.meisen.dissertation.config.xslt.DefaultValues;
+import net.meisen.dissertation.impl.data.metadata.DescriptorMetaDataCollection;
 import net.meisen.dissertation.impl.data.metadata.LoadedMetaData;
 import net.meisen.dissertation.jdbc.protocol.DataType;
 import net.meisen.dissertation.model.cache.IMetaDataCache;
 import net.meisen.dissertation.model.cache.IMetaDataCacheConfig;
-import net.meisen.dissertation.model.data.MetaDataModel;
 import net.meisen.dissertation.model.data.TidaModel;
-import net.meisen.dissertation.model.data.metadata.MetaDataCollection;
+import net.meisen.dissertation.model.data.metadata.IMetaDataCollection;
 import net.meisen.dissertation.model.descriptors.Descriptor;
 import net.meisen.general.genmisc.types.Streams;
 
@@ -27,11 +27,8 @@ import org.hibernate.mapping.Property;
 import org.hibernate.mapping.RootClass;
 import org.hibernate.mapping.SimpleValue;
 import org.hibernate.mapping.Table;
-import java.sql.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
  * A {@code Hibernate} cache used for meta-data.
@@ -44,10 +41,6 @@ public class HibernateMetaDataCache extends HibernateSessionManager<String>
 	private final static Logger LOG = LoggerFactory
 			.getLogger(HibernateMetaDataCache.class);
 
-	@Autowired
-	@Qualifier(DefaultValues.METADATACOLLECTION_ID)
-	private MetaDataCollection metaDataCollection;
-
 	private HibernateMetaDataCacheConfig config;
 
 	/**
@@ -58,40 +51,33 @@ public class HibernateMetaDataCache extends HibernateSessionManager<String>
 	}
 
 	@Override
-	public void cacheMetaDataModel(final MetaDataModel model) {
-		this.setPersistency(false);
+	public void cacheDescriptor(final Descriptor<?, ?, ?> desc) {
 
-		// remove everything persisted so far
-		final Query query = w().getSession().createQuery(
-				"delete from " + getEntityName());
-		query.executeUpdate();
+		// persist the descriptor
+		final Map<String, Object> record = new HashMap<String, Object>();
 
-		// persist the collection
-		for (final Descriptor<?, ?, ?> desc : model.getDescriptors()) {
-			final Map<String, Object> record = new HashMap<String, Object>();
+		final String modelId = desc.getModelId();
+		final String descId = DatatypeConverter.printBase64Binary(Streams
+				.objectToByte(desc.getId()));
+		final byte[] value = Streams.objectToByte(desc.getValue());
 
-			final String modelId = desc.getModelId();
-			final String descId = DatatypeConverter.printBase64Binary(Streams
-					.objectToByte(desc.getId()));
-			final byte[] value = Streams.objectToByte(desc.getValue());
+		final String key = modelId + " " + descId;
+		
+		record.put("key", key);
+		record.put("value", value);
 
-			record.put("key", modelId + " " + descId);
-			record.put("value", value);
-
-			this.saveMap(record, null);
-		}
-		this.setPersistency(true);
+		this.saveMap(record, key);
 	}
 
 	@Override
-	public MetaDataCollection createMetaDataCollection() {
+	public IMetaDataCollection createMetaDataCollection() {
+		final DescriptorMetaDataCollection collection = new DescriptorMetaDataCollection();
 
 		if (size() > 0) {
 			if (LOG.isDebugEnabled()) {
 				LOG.debug("Using database meta-data.");
 			}
 
-			final MetaDataCollection collection = new MetaDataCollection();
 			final Query query = w().getSession().createQuery(
 					"from " + getEntityName() + " order by key");
 			final Iterator<?> it = query.iterate();
@@ -124,16 +110,9 @@ public class HibernateMetaDataCache extends HibernateSessionManager<String>
 				}
 				curMetaData.addValue(descId, value);
 			}
-
-			this.metaDataCollection = collection;
-			return collection;
-		} else {
-			if (LOG.isDebugEnabled()) {
-				LOG.debug("Using configured meta-data.");
-			}
-
-			return metaDataCollection;
 		}
+
+		return collection;
 	}
 
 	@Override
@@ -154,7 +133,10 @@ public class HibernateMetaDataCache extends HibernateSessionManager<String>
 
 	@Override
 	protected Class<? extends RuntimeException>[] getExceptions() {
-		return null;
+		@SuppressWarnings("unchecked")
+		final Class<? extends RuntimeException>[] exp = new Class[] { HibernateDataRecordCacheException.class };
+
+		return exp;
 	}
 
 	@Override

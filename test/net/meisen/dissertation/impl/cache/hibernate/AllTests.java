@@ -13,7 +13,7 @@ import org.junit.runners.Suite;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ TestHibernateDataRecordCache.class,
-		TestHibernateBitmapCache.class,
+		TestHibernateBitmapCache.class, TestHibernateMetaDataCache.class,
 		TestHibernateFactDescriptorModelSetCache.class,
 		TestMetaDataModel.class, TestHibernateIdentifierCache.class,
 		TestInUsage.class })
