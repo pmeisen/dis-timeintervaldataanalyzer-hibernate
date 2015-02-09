@@ -89,7 +89,7 @@ public class HibernateDataRecordCache extends HibernateSessionManager<Integer>
 		final String[] names = this.meta.getNames();
 		final DataType[] types = this.meta.getDataTypes();
 		for (int i = 0; i < names.length; i++) {
-			final boolean isKey = (i == this.meta.getPosRecordId());
+			final boolean isKey = (i == this.meta.getPosRecordId() - 1);
 
 			// get the name
 			final String name = names[i];
@@ -193,7 +193,6 @@ public class HibernateDataRecordCache extends HibernateSessionManager<Integer>
 		if (map == null) {
 			return null;
 		} else {
-
 			final String[] names = this.meta.getNames();
 
 			// recreate the record
